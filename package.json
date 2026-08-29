@@ -1,0 +1,29 @@
+{
+  "name": "chatbot-cartorio",
+  "version": "0.1.0",
+  "description": "Chatbot de WhatsApp para atendimento do cartório de protestos: coleta dados, organiza filas por categoria e informa a posição do cliente na fila do dia.",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "painel": "tsx src/main.ts painel",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "whatsapp": "tsx --env-file-if-exists=.env src/main.ts meta",
+    "checar": "tsc --noEmit",
+    "demo": "tsx src/main.ts < testes/roteiro-demo.txt"
+  },
+  "keywords": [
+    "whatsapp",
+    "chatbot",
+    "cartorio",
+    "protesto"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.7.0",
+    "tsx": "^4.22.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,30 @@
+/hora 10:00
+oi
+1
+11144477735
+Maria Silva Santos
+/telefone 5551988880002
+oi
+4
+11222333000181
+Empresa Modelo Ltda
+R$ 1.250,50
+01/08/2026
+/pdf
+
+/telefone 5551988880003
+oi
+5
+11144477735
+Carlos Alberto Nunes
+2
+3
+/telefone 5551988880004
+oi
+0
+Ana Paula Ribeiro
+Quero saber se ainda dá tempo de pagar hoje
+/fila
+/hora 17:10
+oi
+/sair

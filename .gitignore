@@ -1,0 +1,4 @@
+dados/
+dist/
+node_modules/
+.env
