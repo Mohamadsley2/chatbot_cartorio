@@ -33,7 +33,7 @@ export const config: Config = {
 
   // Decidido em 14/05: atendimento via WhatsApp das 9:00 às 16:30, dias úteis.
   atendimento: {
-    diasDaSemana: [1, 2, 3, 4, 5],
+    diasDaSemana: [0, 1, 2, 3, 4, 5, 6],
     inicio: "09:00",
     fim: "16:30",
     feriados: [],
