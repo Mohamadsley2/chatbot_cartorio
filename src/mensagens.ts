@@ -30,10 +30,12 @@ export const mensagens = {
   opcaoInvalida: (): string =>
     "Não entendi. Por favor, escolha uma das opções disponíveis (1 a 5, ou 0 para falar com atendente).",
 
-  foraDoHorario: (): string =>
-    `Olá! Nosso atendimento via WhatsApp é ${horarioTexto()}.\n\n` +
-    "Sua mensagem foi recebida fora desse horário, então ainda não entramos na fila de atendimento. " +
-    "Por favor, envie sua mensagem novamente no próximo dia útil dentro do horário e teremos prazer em atendê-lo.",
+  // Não bloqueia mais o atendimento — só avisa, depois de coletar e enfileirar,
+  // que a resposta vem só no próximo dia útil. Ver ARQUITETURA.md (decisão que
+  // substituiu o ADR-009).
+  foraDoHorarioAvisoFila: (diaUtilBR: string): string =>
+    `Você escreveu fora do nosso horário oficial de atendimento (${horarioTexto()}). ` +
+    `Sua solicitação foi registrada normalmente, mas só será atendida no próximo dia útil, ${diaUtilBR}.`,
 
   inatividade: (): string =>
     `Como ficamos ${config.sessao.timeoutMinutos} minutos sem resposta, encerrei o atendimento anterior e os dados foram descartados. Vamos começar de novo.`,

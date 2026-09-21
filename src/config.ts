@@ -31,9 +31,11 @@ export const config: Config = {
   nomeCartorio: "Cartório de Protestos",
   fusoHorario: "America/Sao_Paulo",
 
-  // Decidido em 14/05: atendimento via WhatsApp das 9:00 às 16:30, dias úteis.
+  // Decidido em 14/05: horário oficial de atendimento via WhatsApp, seg-sex 9:00-16:30.
+  // Fora disso o bot continua coletando e enfileirando — ver ADR-009 (substituído)
+  // no ARQUITETURA.md: isto aqui só decide a mensagem e o dia em que a fila cai.
   atendimento: {
-    diasDaSemana: [0, 1, 2, 3, 4, 5, 6],
+    diasDaSemana: [1, 2, 3, 4, 5],
     inicio: "09:00",
     fim: "16:30",
     feriados: [],

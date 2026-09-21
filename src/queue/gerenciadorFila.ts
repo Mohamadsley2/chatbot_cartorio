@@ -9,14 +9,21 @@ let estado: EstadoFila | null = null;
 function obterEstado(agora: Date): EstadoFila {
   const dia = dataISO(agora);
 
-  if (!estado) estado = carregarEstado(dia);
-  if (!estado || estado.dia !== dia) estado = { dia, ultimoNumero: 0, solicitacoes: [] };
+  // Recarrega do disco sempre que o dia pedido muda em memória — não só na
+  // primeira chamada do processo. Sem isso, um dia que já tinha solicitações
+  // gravadas (ex: fila do próximo dia útil, preenchida no fim de semana) seria
+  // tratado como vazio e sobrescrito na próxima gravação, apagando os pedidos.
+  if (!estado || estado.dia !== dia) estado = carregarEstado(dia) ?? { dia, ultimoNumero: 0, solicitacoes: [] };
 
   return estado;
 }
 
-export function adicionarNaFila(nova: NovaSolicitacao, agora = new Date()): Solicitacao {
-  const atual = obterEstado(agora);
+// `agora` é o instante real em que o cliente escreveu (aparece no CSV para a
+// atendente). `diaFila` é o dia cujo contador/arquivo recebe a solicitação —
+// igual a `agora`, exceto quando a mensagem chegou fora do horário oficial,
+// caso em que é o próximo dia útil (calculado em core/motor.ts).
+export function adicionarNaFila(nova: NovaSolicitacao, agora = new Date(), diaFila: Date = agora): Solicitacao {
+  const atual = obterEstado(diaFila);
   atual.ultimoNumero += 1;
 
   const entrada: Solicitacao = {

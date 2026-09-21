@@ -63,12 +63,29 @@ function ehFeriado(data: Date): boolean {
   return config.atendimento.feriados.some((f) => f === iso || f === iso.slice(5));
 }
 
-export function dentroDoHorario(data: Date): boolean {
-  const { diaDaSemana, hora, minuto } = partesNoFuso(data);
+function ehDiaUtil(data: Date): boolean {
+  const { diaDaSemana } = partesNoFuso(data);
+  return config.atendimento.diasDaSemana.includes(diaDaSemana) && !ehFeriado(data);
+}
 
-  if (!config.atendimento.diasDaSemana.includes(diaDaSemana)) return false;
-  if (ehFeriado(data)) return false;
+export function dentroDoHorario(data: Date): boolean {
+  const { hora, minuto } = partesNoFuso(data);
+
+  if (!ehDiaUtil(data)) return false;
 
   const agora = hora * 60 + minuto;
   return agora >= paraMinutos(config.atendimento.inicio) && agora <= paraMinutos(config.atendimento.fim);
+}
+
+// A partir de uma data qualquer, acha o próximo dia útil (dia da semana permitido
+// e não-feriado) — ignora o horário, só o dia. Usada para decidir em qual fila
+// cai uma mensagem recebida fora do horário oficial.
+export function proximoDiaUtil(data: Date): Date {
+  let candidato = new Date(data.getTime());
+
+  do {
+    candidato = new Date(candidato.getTime() + 24 * 60 * 60 * 1000);
+  } while (!ehDiaUtil(candidato));
+
+  return candidato;
 }

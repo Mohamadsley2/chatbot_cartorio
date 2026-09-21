@@ -6,7 +6,7 @@ import { adicionarNaFila } from "../queue/gerenciadorFila.js";
 import { atualizarSessao, criarSessao, encerrarSessao, obterSessao } from "../bot/gerenciadorDeSessao.js";
 import type { Categoria, Fluxo, MensagemRecebida, Passo, Sessao, Solicitacao } from "../types.js";
 import { fluxos, opcoesDoMenu, textoDaPergunta } from "./fluxos.js";
-import { dentroDoHorario } from "./horario.js";
+import { dataBR, dentroDoHorario, proximoDiaUtil } from "./horario.js";
 import {
   validarData,
   validarDocumento,
@@ -22,12 +22,6 @@ import {
 const PALAVRAS_MENU = ["menu", "voltar", "cancelar", "inicio", "início"];
 
 export function processarMensagem(msg: MensagemRecebida): string[] {
-  // Fora do horário o bot não coleta dados nem gera número de fila.
-  if (!dentroDoHorario(msg.recebidaEm)) {
-    encerrarSessao(msg.telefone);
-    return [mensagens.foraDoHorario()];
-  }
-
   const respostas: string[] = [];
   const { sessao, expirada } = obterSessao(msg.telefone, msg.recebidaEm);
   if (expirada) respostas.push(mensagens.inatividade());
@@ -72,7 +66,7 @@ function escolherNoMenu(msg: MensagemRecebida, texto: string): string[] {
 function responderPasso(msg: MensagemRecebida, sessao: Sessao, categoria: Categoria): string[] {
   const fluxo = fluxos[categoria];
   const atual = proximoPasso(fluxo, sessao.indicePasso, sessao.dados);
-  if (!atual) return [finalizar(msg, sessao, fluxo, sessao.dados)];
+  if (!atual) return finalizar(msg, sessao, fluxo, sessao.dados);
 
   const resultado = validarResposta(atual.passo, msg);
 
@@ -95,13 +89,24 @@ function responderPasso(msg: MensagemRecebida, sessao: Sessao, categoria: Catego
     return [textoDaPergunta(seguinte.passo)];
   }
 
-  return [finalizar(msg, sessao, fluxo, dados)];
+  return finalizar(msg, sessao, fluxo, dados);
 }
 
-function finalizar(msg: MensagemRecebida, sessao: Sessao, fluxo: Fluxo, dados: Record<string, string>): string {
-  const solicitacao = enfileirar(sessao.telefone, fluxo.categoria, dados, msg.recebidaEm);
+// Fora do horário oficial a solicitação não é recusada — só cai na fila do
+// próximo dia útil em vez da de hoje (ver ARQUITETURA.md, decisão que
+// substituiu o ADR-009).
+function diaDaFila(agora: Date): Date {
+  return dentroDoHorario(agora) ? agora : proximoDiaUtil(agora);
+}
+
+function finalizar(msg: MensagemRecebida, sessao: Sessao, fluxo: Fluxo, dados: Record<string, string>): string[] {
+  const diaFila = diaDaFila(msg.recebidaEm);
+  const solicitacao = enfileirar(sessao.telefone, fluxo.categoria, dados, msg.recebidaEm, diaFila);
   encerrarSessao(sessao.telefone);
-  return fluxo.confirmacao(solicitacao);
+
+  const respostas = [fluxo.confirmacao(solicitacao)];
+  if (!dentroDoHorario(msg.recebidaEm)) respostas.push(mensagens.foraDoHorarioAvisoFila(dataBR(diaFila)));
+  return respostas;
 }
 
 // Na 3ª tentativa errada o cliente entra na fila da própria categoria com uma
@@ -112,10 +117,13 @@ function encaminharParaAtendente(msg: MensagemRecebida, sessao: Sessao, fluxo: F
     observacao: `Não conseguiu informar "${passo.rotulo}". Último envio: "${msg.texto.trim()}"`,
   };
 
-  const solicitacao = enfileirar(sessao.telefone, fluxo.categoria, dados, msg.recebidaEm);
+  const diaFila = diaDaFila(msg.recebidaEm);
+  const solicitacao = enfileirar(sessao.telefone, fluxo.categoria, dados, msg.recebidaEm, diaFila);
   encerrarSessao(sessao.telefone);
 
-  return [`${mensagens.encaminhandoParaAtendente()}\n\n${mensagens.naFila(solicitacao.numeroFila)}`];
+  const respostas = [`${mensagens.encaminhandoParaAtendente()}\n\n${mensagens.naFila(solicitacao.numeroFila)}`];
+  if (!dentroDoHorario(msg.recebidaEm)) respostas.push(mensagens.foraDoHorarioAvisoFila(dataBR(diaFila)));
+  return respostas;
 }
 
 function enfileirar(
@@ -123,9 +131,10 @@ function enfileirar(
   categoria: Categoria,
   dados: Record<string, string>,
   agora: Date,
+  diaFila: Date,
 ): Solicitacao {
   const { nome = "(não informado)", documento = "", ...dadosExtras } = dados;
-  return adicionarNaFila({ categoria, telefone, nome, documento, dadosExtras }, agora);
+  return adicionarNaFila({ categoria, telefone, nome, documento, dadosExtras }, agora, diaFila);
 }
 
 // Encontra o próximo passo aplicável a partir de um índice, pulando os passos
